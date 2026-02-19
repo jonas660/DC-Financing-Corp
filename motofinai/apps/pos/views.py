@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 from typing import Any, Dict
-
+from django.contrib.auth import get_user_mode
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
@@ -351,11 +351,10 @@ class POSSessionDetailView(LoginRequiredMixin, DetailView):
             {"label": "POS Sessions", "url": reverse("pos:session_list")},
             {"label": f"Session {session.id}"},
         ]
-    
-        return context
     def create_admin(request):
-    User = get_user_model()
-    if not User.objects.filter(username='admin').exists():
-        User.objects.create_superuser('admin', 'admin@example.com', 'admin1234')
-        return HttpResponse("Superuser created!")
-    return HttpResponse("User already exists.")
+        User = get_user_model()
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser('admin', 'admin@example.com', 'SecurePassword123')
+            return HttpResponse("Superuser created!")
+        return HttpResponse("User already exists.")
+        
