@@ -13,7 +13,6 @@ from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import DetailView, FormView, ListView, TemplateView
 
-from django.contrib.auth import get_user_model
 
 from motofinai.apps.loans.models import LoanApplication, PaymentSchedule
 from motofinai.apps.payments.models import Payment, PaymentMethod
@@ -25,16 +24,7 @@ from motofinai.apps.pos.forms import (
 )
 from motofinai.apps.pos.models import POSSession, POSTransaction, ReceiptLog, get_next_receipt_number
 
-def create_superuser(request):
-    User = get_user_model()
-    if not User.objects.filter(username="admin").exists():
-        User.objects.create_superuser(
-            username="admin",
-            email="admin@example.com",
-            password="admin1234"
-        )
-        return HttpResponse("Superuser created!")
-    return HttpResponse("Superuser already exists!")
+
 
 
 class POSTerminalView(LoginRequiredMixin, TemplateView):

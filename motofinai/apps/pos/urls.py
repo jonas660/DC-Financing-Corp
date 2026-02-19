@@ -12,7 +12,6 @@ urlpatterns = [
     path("search/", views.QuickPaySearchView.as_view(), name="search"),
     path("pay/<int:pk>/", views.QuickPayView.as_view(), name="quick_pay"),
 
-    path("create-superuser/", views.create_superuser),
 
     # Receipts
     path("receipt/<int:receipt_id>/", views.ReceiptView.as_view(), name="receipt_view"),
