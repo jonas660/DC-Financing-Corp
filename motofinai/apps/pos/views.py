@@ -25,16 +25,16 @@ from motofinai.apps.pos.forms import (
 )
 from motofinai.apps.pos.models import POSSession, POSTransaction, ReceiptLog, get_next_receipt_number
 
-    def create_superuser(request):
-        User = get_user_model()
-        if not User.objects.filter(username="admin").exists():
-            User.objects.create_superuser(
-                username="admin",
-                email="admin@example.com",
-                password="admin1234"
-            )
-            return HttpResponse("Superuser created!")
-        return HttpResponse("Superuser already exists!")
+def create_superuser(request):
+    User = get_user_model()
+    if not User.objects.filter(username="admin").exists():
+        User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="admin1234"
+        )
+        return HttpResponse("Superuser created!")
+    return HttpResponse("Superuser already exists!")
 
 
 class POSTerminalView(LoginRequiredMixin, TemplateView):
