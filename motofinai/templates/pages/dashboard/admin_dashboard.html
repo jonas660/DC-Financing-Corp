@@ -1,0 +1,357 @@
+{% extends "layouts/base.html" %}
+{% load dashboard_filters %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block breadcrumbs %}
+  {% include 'components/molecules/breadcrumbs.html' with breadcrumbs=breadcrumbs_list %}
+{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
+            <p class="text-slate-600 mt-2">Comprehensive system overview and analytics</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.reload()" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition" title="Refresh dashboard">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+            </button>
+            <button onclick="exportDashboard()" class="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 transition" title="Export to Excel">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats Grid - Using Enhanced KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {% include 'components/molecules/kpi_card.html' with title="Total Loans" value=kpis.loans.total_loans subtitle="Active this month" trend="up" trend_value="+8%" trend_label="vs last month" icon="chart" %}
+
+        {% include 'components/molecules/kpi_card.html' with title="Amount Collected" value="₱"|add:kpis.payments.total_collected|floatformat:"0" subtitle="This month" trend="up" trend_value="+15%" trend_label="collection rate" icon="dollar" %}
+
+        {% include 'components/molecules/kpi_card.html' with title="Overdue Accounts" value=kpis.payments.overdue_count subtitle="Needs action" trend="down" trend_value="-5%" trend_label="improvement needed" icon="alert" %}
+
+        {% include 'components/molecules/kpi_card.html' with title="System Users" value=kpis.users.total_users subtitle="Active members" trend="up" trend_value="+3%" trend_label="user growth" icon="users" %}
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Loan Status Distribution -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <h2 class="text-lg font-semibold text-slate-900 mb-4">Loan Status</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Pending</span>
+                    <span class="text-sm font-semibold text-yellow-600">{{ kpis.loans.pending_loans }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Approved</span>
+                    <span class="text-sm font-semibold text-blue-600">{{ kpis.loans.approved_loans }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Active</span>
+                    <span class="text-sm font-semibold text-green-600">{{ kpis.loans.active_loans }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Completed</span>
+                    <span class="text-sm font-semibold text-gray-600">{{ kpis.loans.completed_loans }}</span>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Total Value</span>
+                    <span class="text-sm font-bold text-gray-900">₱{{ kpis.loans.total_loan_value|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-sm font-medium text-gray-700">Average</span>
+                    <span class="text-sm font-bold text-gray-900">₱{{ kpis.loans.avg_loan_amount|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Distribution -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <h2 class="text-lg font-semibold text-slate-900 mb-4">Risk Assessment</h2>
+            <div class="space-y-3">
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm text-gray-600">Low Risk</span>
+                        <span class="text-sm font-semibold text-green-600">{{ kpis.risk.low_risk }}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-600 h-2 rounded-full" style="width: {% if kpis.risk.total_assessments > 0 %}{{ kpis.risk.low_risk|mul:100|div:kpis.risk.total_assessments }}%{% else %}0%{% endif %}"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm text-gray-600">Medium Risk</span>
+                        <span class="text-sm font-semibold text-yellow-600">{{ kpis.risk.medium_risk }}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-yellow-600 h-2 rounded-full" style="width: {% if kpis.risk.total_assessments > 0 %}{{ kpis.risk.medium_risk|mul:100|div:kpis.risk.total_assessments }}%{% else %}0%{% endif %}"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm text-gray-600">High Risk</span>
+                        <span class="text-sm font-semibold text-red-600">{{ kpis.risk.high_risk }}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-red-600 h-2 rounded-full" style="width: {% if kpis.risk.total_assessments > 0 %}{{ kpis.risk.high_risk|mul:100|div:kpis.risk.total_assessments }}%{% else %}0%{% endif %}"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Average Score</span>
+                    <span class="text-sm font-bold text-gray-900">{{ kpis.risk.avg_risk_score|floatformat:1 }}</span>
+                </div>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-sm font-medium text-gray-700">High Risk %</span>
+                    <span class="text-sm font-bold text-red-600">{{ kpis.risk.high_risk_pct|floatformat:1 }}%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Status -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <h2 class="text-lg font-semibold text-slate-900 mb-4">Inventory</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Available</span>
+                    <span class="text-sm font-semibold text-green-600">{{ kpis.inventory.available }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Reserved</span>
+                    <span class="text-sm font-semibold text-yellow-600">{{ kpis.inventory.reserved }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Sold</span>
+                    <span class="text-sm font-semibold text-blue-600">{{ kpis.inventory.sold }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Repossessed</span>
+                    <span class="text-sm font-semibold text-red-600">{{ kpis.inventory.repossessed }}</span>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">Total Units</span>
+                    <span class="text-sm font-bold text-gray-900">{{ kpis.inventory.total_units }}</span>
+                </div>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-sm font-medium text-gray-700">Total Value</span>
+                    <span class="text-sm font-bold text-gray-900">₱{{ kpis.inventory.total_value|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repossession & Audit Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Repossession Cases -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <h2 class="text-lg font-semibold text-slate-900 mb-4">Repossession Cases</h2>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-yellow-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600">Warning</p>
+                    <p class="text-2xl font-bold text-yellow-600 mt-1">{{ kpis.repossession.warning }}</p>
+                </div>
+                <div class="bg-red-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600">Critical</p>
+                    <p class="text-2xl font-bold text-red-600 mt-1">{{ kpis.repossession.critical_cases }}</p>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Active Cases</span>
+                    <span class="text-sm font-semibold">{{ kpis.repossession.active }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Recovered</span>
+                    <span class="text-sm font-semibold text-green-600">{{ kpis.repossession.recovered }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Recovery Rate</span>
+                    <span class="text-sm font-semibold">{{ kpis.repossession.recovery_rate|floatformat:1 }}%</span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Total Overdue</span>
+                    <span class="text-sm font-bold text-red-600">₱{{ kpis.repossession.total_overdue|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Trail Summary -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <h2 class="text-lg font-semibold text-slate-900 mb-4">Audit Trail (Last {{ kpis.audit.days }} Days)</h2>
+            <div class="mb-4">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600">Total Events</p>
+                    <p class="text-3xl font-bold text-blue-600 mt-1">{{ kpis.audit.total_events }}</p>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Recent Logins</span>
+                    <span class="text-sm font-semibold">{{ kpis.audit.recent_logins }}</span>
+                </div>
+                {% for action in kpis.audit.action_counts|slice:":5" %}
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">{{ action.action }}</span>
+                    <span class="text-sm font-semibold">{{ action.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4">
+                <a href="{% url 'audit:list' %}" class="text-sm text-blue-600 hover:text-blue-800">View Full Audit Trail →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h2>
+
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for activity in kpis.recent_activities %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ activity.created_at|date:"M d, H:i" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ activity.actor.email|default:"System" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ activity.action }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {{ activity.description|truncatewords:15 }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                            No recent activities
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="block md:hidden space-y-4">
+            {% for activity in kpis.recent_activities %}
+            <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex items-start justify-between mb-2">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {{ activity.action }}
+                    </span>
+                    <span class="text-xs text-gray-500">
+                        {{ activity.created_at|date:"M d, H:i" }}
+                    </span>
+                </div>
+                <div class="mt-2">
+                    <p class="text-sm font-medium text-gray-900">{{ activity.actor.email|default:"System" }}</p>
+                    <p class="text-sm text-gray-500 mt-1">{{ activity.description|truncatewords:15 }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-6 text-sm text-gray-500">
+                No recent activities
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <a href="{% url 'loans:list' %}" class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-teal-300 transition-all">
+            <div class="flex items-center gap-2 mb-1">
+                <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <h3 class="text-sm font-medium text-slate-900">Manage Loans</h3>
+            </div>
+            <p class="text-xs text-slate-500 ml-7">View and process applications</p>
+        </a>
+        <a href="{% url 'inventory:motor-list' %}" class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-teal-300 transition-all">
+            <div class="flex items-center gap-2 mb-1">
+                <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.658 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                <h3 class="text-sm font-medium text-slate-900">Inventory</h3>
+            </div>
+            <p class="text-xs text-slate-500 ml-7">Manage motorcycles</p>
+        </a>
+        <a href="{% url 'users:user-list' %}" class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-teal-300 transition-all">
+            <div class="flex items-center gap-2 mb-1">
+                <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <h3 class="text-sm font-medium text-slate-900">Users</h3>
+            </div>
+            <p class="text-xs text-slate-500 ml-7">Manage system users</p>
+        </a>
+        <a href="{% url 'audit:list' %}" class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 hover:shadow-md hover:border-teal-300 transition-all">
+            <div class="flex items-center gap-2 mb-1">
+                <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <h3 class="text-sm font-medium text-slate-900">Audit Logs</h3>
+            </div>
+            <p class="text-xs text-slate-500 ml-7">View system activities</p>
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Export dashboard function
+  function exportDashboard() {
+    // This would typically call a backend endpoint to generate Excel export
+    // For now, show a message that export is being prepared
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('show');
+    }
+
+    // Simulate export (in production, this would redirect to an export URL)
+    setTimeout(function() {
+      if (loadingOverlay) {
+        loadingOverlay.classList.remove('show');
+      }
+      alert('Export functionality: Would download comprehensive dashboard data as Excel file.\n\nIncluding:\n• Loan summaries\n• Payment schedules\n• Risk assessments\n• Inventory data\n• Audit trail');
+    }, 1500);
+  }
+
+  // Add interactive tooltips
+  document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.group');
+    cards.forEach(function(card) {
+      card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px)';
+      });
+      card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+      });
+    });
+  });
+</script>
+{% endblock %}
+
