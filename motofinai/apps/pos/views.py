@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 from typing import Any, Dict
-from django.contrib.auth import get_user_mode
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
