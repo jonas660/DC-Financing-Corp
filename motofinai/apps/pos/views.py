@@ -356,6 +356,6 @@ class POSSessionDetailView(LoginRequiredMixin, DetailView):
     def create_admin(request):
     User = get_user_model()
     if not User.objects.filter(username='admin').exists():
-        User.objects.create_superuser('admin', 'admin@example.com', 'SecurePassword123')
+        User.objects.create_superuser('admin', 'admin@example.com', 'admin1234')
         return HttpResponse("Superuser created!")
     return HttpResponse("User already exists.")
