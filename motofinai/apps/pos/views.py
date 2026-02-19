@@ -2,7 +2,6 @@
 
 from decimal import Decimal
 from typing import Any, Dict
-from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
@@ -13,6 +12,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import DetailView, FormView, ListView, TemplateView
+
+from django.contrib.auth import get_user_model
 
 from motofinai.apps.loans.models import LoanApplication, PaymentSchedule
 from motofinai.apps.payments.models import Payment, PaymentMethod
@@ -351,11 +352,15 @@ class POSSessionDetailView(LoginRequiredMixin, DetailView):
             {"label": "POS Sessions", "url": reverse("pos:session_list")},
             {"label": f"Session {session.id}"},
         ]
-    def create_admin(request):
+    def create_superuser(request):
         User = get_user_model()
-        if not User.objects.filter(username='admin').exists():
-            User.objects.create_superuser('admin', 'admin@example.com', 'SecurePassword123')
+        if not User.objects.filter(username="admin").exists():
+            User.objects.create_superuser(
+                username="admin",
+                email="admin@example.com",
+                password="admin1234"
+            )
             return HttpResponse("Superuser created!")
-        return HttpResponse("User already exists.")
+        return HttpResponse("Superuser already exists!")
 
         
