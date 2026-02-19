@@ -14,6 +14,7 @@ import os
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
+import dj_database_url
 
 from dotenv import load_dotenv
 
