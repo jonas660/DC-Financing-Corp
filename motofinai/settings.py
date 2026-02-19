@@ -107,59 +107,11 @@ WSGI_APPLICATION = "motofinai.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-DEFAULT_DB_ENGINE = os.getenv("DB_ENGINE", "django.db.backends.postgresql")
-if RUNNING_TESTS:
-    DEFAULT_DB_ENGINE = "django.db.backends.sqlite3"
-
-
-def _database_from_url(db_url: str) -> dict[str, str]:
-    parsed = urlparse(db_url)
-    engine_map = {
-        "postgres": "django.db.backends.postgresql",
-        "postgresql": "django.db.backends.postgresql",
-        "pgsql": "django.db.backends.postgresql",
-        "mysql": "django.db.backends.mysql",
-    }
-    engine = engine_map.get(parsed.scheme, DEFAULT_DB_ENGINE)
-    return {
-        "ENGINE": engine,
-        "NAME": parsed.path.lstrip("/") or "",
-        "USER": parsed.username or "",
-        "PASSWORD": parsed.password or "",
-        "HOST": parsed.hostname or "",
-        "PORT": str(parsed.port or ""),
-        "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
-    }
-
-
-if DATABASE_URL and DEFAULT_DB_ENGINE != "django.db.backends.sqlite3":
-    DATABASES = {"default": _database_from_url(DATABASE_URL)}
-elif DEFAULT_DB_ENGINE == "django.db.backends.sqlite3":
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.getenv("DB_NAME", BASE_DIR / "db.sqlite3"),
-        }
-    }
-else:
-    default_port = "5432" if "postgres" in DEFAULT_DB_ENGINE else "3306"
-    options = {}
-    if "mysql" in DEFAULT_DB_ENGINE:
-        options["charset"] = "utf8mb4"
-
-    DATABASES = {
-        "default": {
-            "ENGINE": DEFAULT_DB_ENGINE,
-            "NAME": os.getenv("DB_NAME", "motofinai"),
-            "USER": os.getenv("DB_USER", "motofinai"),
-            "PASSWORD": os.getenv("DB_PASSWORD", ""),
-            "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", default_port),
-            "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
-            "OPTIONS": options,
-        }
-    }
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL")
+    )
+}
 
 
 # Password validation
