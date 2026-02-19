@@ -40,7 +40,7 @@ SECRET_KEY = os.getenv(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
 
-ALLOWED_HOSTS = ['your-render-url.onrender.com', 'your-custom-domain.com']
+ALLOWED_HOSTS = ['https://dc-financing-corp.onrender.com']
 
 
 # Application definition
