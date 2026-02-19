@@ -351,4 +351,11 @@ class POSSessionDetailView(LoginRequiredMixin, DetailView):
             {"label": "POS Sessions", "url": reverse("pos:session_list")},
             {"label": f"Session {session.id}"},
         ]
+    
         return context
+    def create_admin(request):
+    User = get_user_model()
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'admin@example.com', 'SecurePassword123')
+        return HttpResponse("Superuser created!")
+    return HttpResponse("User already exists.")
