@@ -357,4 +357,5 @@ class POSSessionDetailView(LoginRequiredMixin, DetailView):
             User.objects.create_superuser('admin', 'admin@example.com', 'SecurePassword123')
             return HttpResponse("Superuser created!")
         return HttpResponse("User already exists.")
+
         
